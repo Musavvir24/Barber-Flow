@@ -257,11 +257,12 @@ const Dashboard = ({ shop }) => {
           fontSize: '0.9rem',
           border: '1px solid #ddd'
         }}>
-          {window.location.origin}/book/{shop?.slug}
+          {import.meta.env.VITE_BOOKING_URL ? `${import.meta.env.VITE_BOOKING_URL}/book/${shop?.slug}` : `${window.location.origin}/book/${shop?.slug}`}
         </code>
         <button
           onClick={() => {
-            navigator.clipboard.writeText(`${window.location.origin}/book/${shop?.slug}`);
+            const bookingUrl = import.meta.env.VITE_BOOKING_URL ? `${import.meta.env.VITE_BOOKING_URL}/book/${shop?.slug}` : `${window.location.origin}/book/${shop?.slug}`;
+            navigator.clipboard.writeText(bookingUrl);
             alert('Booking link copied!');
           }}
           className="btn btn-primary"

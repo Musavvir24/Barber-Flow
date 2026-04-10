@@ -22,3 +22,8 @@ services:
     rootDir: frontend
     buildCommand: npm install && npm run build
     publishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://barber-flow-2j9t.onrender.com
+      - key: VITE_BOOKING_URL
+        value: https://barber-flow-1.onrender.com
