@@ -1,0 +1,168 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Shop {
+  id                String                @id @default(cuid())
+  name              String
+  slug              String                @unique
+  opening_time      String                @default("09:00:00")
+  closing_time      String                @default("18:00:00")
+  country           String                @default("India")
+  timezone          String                @default("Asia/Kolkata")
+  trial_started_at  DateTime              @default(now())
+  trial_ends_at     DateTime
+  is_premium        Boolean               @default(false)
+  upgrade_date      DateTime?
+  premium_expires_at DateTime?
+  
+  users             User[]
+  barbers           Barber[]
+  services          Service[]
+  appointments      Appointment[]
+  payments          Payment[]
+  
+  created_at        DateTime              @default(now())
+  updated_at        DateTime              @updatedAt
+
+  @@index([slug])
+}
+
+model User {
+  id                String    @id @default(cuid())
+  shop_id           String
+  shop              Shop      @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  
+  email             String    @unique
+  password_hash     String
+  phone             String?
+  country_code      String?
+  
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@index([shop_id])
+  @@index([email])
+}
+
+model Barber {
+  id                String                      @id @default(cuid())
+  shop_id           String
+  shop              Shop                        @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  
+  name              String
+  phone             String?
+  active            Boolean                     @default(true)
+  available         Boolean                     @default(true)
+  
+  services          BarbersOnServices[]
+  appointments      Appointment[]
+  unavailable_days  BarberUnavailableDay[]
+  
+  created_at        DateTime                    @default(now())
+  updated_at        DateTime                    @updatedAt
+
+  @@index([shop_id])
+}
+
+model BarbersOnServices {
+  barber_id         String
+  barber            Barber    @relation(fields: [barber_id], references: [id], onDelete: Cascade)
+  
+  service_id        String
+  service           Service   @relation(fields: [service_id], references: [id], onDelete: Cascade)
+  
+  @@id([barber_id, service_id])
+  @@index([service_id])
+}
+
+model Service {
+  id                String                @id @default(cuid())
+  shop_id           String
+  shop              Shop                  @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  
+  name              String
+  duration_minutes  Int
+  price             Float
+  gap_time_minutes  Int                   @default(0)
+  active            Boolean               @default(true)
+  
+  appointments      Appointment[]
+  barbers           BarbersOnServices[]
+  
+  created_at        DateTime              @default(now())
+  updated_at        DateTime              @updatedAt
+
+  @@index([shop_id])
+}
+
+model Appointment {
+  id                String    @id @default(cuid())
+  shop_id           String
+  shop              Shop      @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  
+  barber_id         String
+  barber            Barber    @relation(fields: [barber_id], references: [id], onDelete: Cascade)
+  
+  service_id        String
+  service           Service   @relation(fields: [service_id], references: [id], onDelete: Cascade)
+  
+  customer_name     String
+  customer_phone    String
+  customer_email    String?
+  
+  start_time        DateTime
+  end_time          DateTime
+  
+  status            String    @default("booked")
+  notification_sent Boolean   @default(false)
+  notification_channel String?
+  
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@index([shop_id])
+  @@index([barber_id])
+  @@index([start_time])
+  @@index([notification_sent])
+}
+
+model BarberUnavailableDay {
+  id                String    @id @default(cuid())
+  barber_id         String
+  barber            Barber    @relation(fields: [barber_id], references: [id], onDelete: Cascade)
+  
+  unavailable_date  DateTime
+  
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@unique([barber_id, unavailable_date])
+  @@index([barber_id, unavailable_date])
+}
+
+model Payment {
+  id                String    @id @default(cuid())
+  shop_id           String
+  shop              Shop      @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  
+  amount            Float
+  currency          String    @default("INR")
+  payment_method    String
+  status            String    @default("pending")
+  gateway           String    @default("razorpay")
+  
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@index([shop_id])
+  @@index([status])
+}
