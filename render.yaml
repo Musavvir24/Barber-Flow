@@ -3,8 +3,9 @@ services:
     name: barberflow-backend
     runtime: node
     plan: free
-    buildCommand: cd backend && npm install && npx prisma migrate deploy
-    startCommand: cd backend && npm start
+    rootDir: backend
+    buildCommand: npm install && npx prisma migrate deploy
+    startCommand: npm start
     envVars:
       - key: DATABASE_URL
         scope: all
@@ -14,14 +15,10 @@ services:
         scope: all
       - key: JWT_SECRET
         scope: all
-    routes:
-      - path: /api
-        destination: /api
 
   - type: static
     name: barberflow-frontend
-    staticPublishPath: frontend/dist
-    buildCommand: cd frontend && npm install && npm run build
-    routes:
-      - path: /
-        destination: /index.html
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    publishPath: dist
