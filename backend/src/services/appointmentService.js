@@ -115,9 +115,3 @@ module.exports = {
   hasBreakConflict,
   getAvailableSlots,
 };
-
-module.exports = {
-  checkConflict,
-  getAvailableSlots,
-  hasBreakConflict,
-};
