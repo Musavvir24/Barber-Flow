@@ -16,14 +16,14 @@ services:
       - key: JWT_SECRET
         scope: all
 
-  - type: static
+  - type: web
     name: barberflow-frontend
-    runtime: static
+    runtime: node
     rootDir: frontend
     buildCommand: npm install && npm run build
-    publishPath: dist
+    startCommand: node server.js
     envVars:
       - key: VITE_API_URL
         value: https://barber-flow-2j9t.onrender.com
       - key: VITE_BOOKING_URL
-        value: https://barber-flow-1.onrender.com
+        value: https://barberflow-frontend.onrender.com
