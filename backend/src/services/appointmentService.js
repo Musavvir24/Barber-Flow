@@ -1,38 +1,39 @@
-const Appointment = require('../models/Appointment');
+const { prisma } = require('../utils/db');
 
 // Check if barber has conflicting appointments
 const checkConflict = async (barberId, startTime, endTime, excludeAppointmentId = null) => {
-  let filter = {
-    barber_id: barberId,
-    status: 'booked',
-    $or: [
-      {
-        start_time: { $lt: new Date(endTime), $gte: new Date(startTime) },
-      },
-      {
-        end_time: { $gt: new Date(startTime), $lte: new Date(endTime) },
-      },
-      {
-        start_time: { $lte: new Date(startTime) },
-        end_time: { $gte: new Date(endTime) },
-      },
-    ],
-  };
-
-  // Exclude current appointment if editing
-  if (excludeAppointmentId) {
-    filter._id = { $ne: excludeAppointmentId };
-  }
-
-  const result = await Appointment.findOne(filter);
+  const result = await prisma.appointment.findFirst({
+    where: {
+      barber_id: barberId,
+      status: 'booked',
+      OR: [
+        {
+          start_time: { lt: endTime, gte: startTime },
+        },
+        {
+          end_time: { gt: startTime, lte: endTime },
+        },
+        {
+          start_time: { lte: startTime },
+          end_time: { gte: endTime },
+        },
+      ],
+      ...(excludeAppointmentId && { NOT: { id: excludeAppointmentId } }),
+    },
+  });
   return !!result; // Returns true if conflict exists
 };
 
 // Check if time slot falls within any barber break times (placeholder)
 const hasBreakConflict = async (barberId, date, slotTime, durationMinutes) => {
-  // Since barber breaks table is not fully implemented in MongoDB,
-  // returning false for now. Can be extended later.
-  return false;
+  // Check for barber unavailable days
+  const unavailableDay = await prisma.barberUnavailableDay.findFirst({
+    where: {
+      barber_id: barberId,
+      unavailable_date: new Date(date),
+    },
+  });
+  return !!unavailableDay;
 };
 
 // Get available time slots for a barber on a specific date
