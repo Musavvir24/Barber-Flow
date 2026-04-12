@@ -55,6 +55,15 @@ const Dashboard = ({ shop }) => {
       }
     } catch (err) {
       console.error('Failed to check trial status:', err);
+      
+      // If shop not found (404), clear localStorage and redirect to login
+      if (err.response?.status === 404) {
+        console.warn('Shop not found in database. Clearing cached data and redirecting to login...');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('shop');
+        window.location.href = '/login';
+      }
     }
   };
 
@@ -67,8 +76,19 @@ const Dashboard = ({ shop }) => {
     } catch (err) {
       setError(err.message);
       console.error('Failed to fetch dashboard stats:', err);
+      
+      // If unauthorized (401) or not found (404), clear localStorage
+      if (err.response?.status === 401 || err.response?.status === 404) {
+        console.warn('Session expired or shop not found. Redirecting to login...');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('shop');
+        window.location.href = '/login';
+      }
     } finally {
       setLoading(false);
+    }
+  };
     }
   };
 
