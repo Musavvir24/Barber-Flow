@@ -89,8 +89,6 @@ const Dashboard = ({ shop }) => {
       setLoading(false);
     }
   };
-    }
-  };
 
   const handleUpgrade = async () => {
     // In a real app, integrate with Razorpay (India) or Stripe (International)
