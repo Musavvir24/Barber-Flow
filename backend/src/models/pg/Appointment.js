@@ -21,18 +21,31 @@ const Appointment = {
 
   async findByBarberId(barberId) {
     return prisma.appointment.findMany({
-      where: { barber_id: barberId },
-      orderBy: { start_time: 'asc' },
+      where: { 
+        barber_id: barberId,
+        appointment_date: { not: null }
+      },
+      orderBy: { created_at: 'asc' },
     });
   },
 
   async findByDateRange(shopId, startDate, endDate) {
+    // startDate and endDate should be in YYYY-MM-DD format
+    // Convert Date objects to YYYY-MM-DD if needed
+    const formatDate = (date) => {
+      if (typeof date === 'string') return date;
+      return date.toISOString().split('T')[0];
+    };
+    
+    const startDateStr = formatDate(startDate);
+    const endDateStr = formatDate(endDate);
+    
     return prisma.appointment.findMany({
       where: {
         shop_id: shopId,
-        start_time: {
-          gte: startDate,
-          lte: endDate,
+        appointment_date: {
+          gte: startDateStr,
+          lte: endDateStr,
         },
       },
       include: { barber: true, service: true },

@@ -10,9 +10,12 @@ const getAllAppointments = async (req, res) => {
     const { shopId } = req.user;
     const { prisma } = require('../utils/db');
     const appointments = await prisma.appointment.findMany({
-      where: { shop_id: shopId },
+      where: { 
+        shop_id: shopId,
+        appointment_date: { not: null }
+      },
       include: { barber: true, service: true },
-      orderBy: { start_time: 'desc' },
+      orderBy: { created_at: 'desc' },
     });
     res.json(appointments);
   } catch (error) {
@@ -31,9 +34,12 @@ const getAppointmentsByShopSlug = async (req, res) => {
     }
     const { prisma } = require('../utils/db');
     const appointments = await prisma.appointment.findMany({
-      where: { shop_id: shop.id },
+      where: { 
+        shop_id: shop.id,
+        appointment_date: { not: null }
+      },
       include: { barber: true, service: true },
-      orderBy: { start_time: 'asc' },
+      orderBy: { created_at: 'asc' },
     });
     res.json(appointments);
   } catch (error) {
@@ -133,9 +139,13 @@ const getCustomerHistory = async (req, res) => {
     }
     const { prisma } = require('../utils/db');
     const appointments = await prisma.appointment.findMany({
-      where: { shop_id: shop.id, customer_phone: phone },
+      where: { 
+        shop_id: shop.id, 
+        customer_phone: phone,
+        appointment_date: { not: null }
+      },
       include: { barber: true, service: true },
-      orderBy: { start_time: 'desc' },
+      orderBy: { created_at: 'desc' },
     });
     res.json(appointments);
   } catch (error) {

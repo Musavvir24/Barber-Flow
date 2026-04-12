@@ -64,14 +64,16 @@ const getDashboardStats = async (req, res) => {
       },
     });
 
-    // Get recent appointments (last 5) - sort by appointment_date and start_time
+    // Get recent appointments (last 5) - order by created_at instead of appointment_date to avoid UTF-8 issues
     const recentAppointments = await prisma.appointment.findMany({
-      where: { shop_id: shopId },
+      where: { 
+        shop_id: shopId,
+        appointment_date: {
+          not: null // Filter out null dates to avoid UTF-8 encoding errors
+        }
+      },
       include: { barber: true, service: true },
-      orderBy: [
-        { appointment_date: 'desc' },
-        { start_time: 'desc' }
-      ],
+      orderBy: { created_at: 'desc' },
       take: 5,
     });
 
@@ -109,12 +111,14 @@ const getAppointmentsByStatus = async (req, res) => {
     }
 
     const appointments = await prisma.appointment.findMany({
-      where: filter,
+      where: {
+        ...filter,
+        appointment_date: {
+          not: null // Filter out null dates to avoid UTF-8 encoding errors
+        }
+      },
       include: { barber: true, service: true },
-      orderBy: [
-        { appointment_date: 'desc' },
-        { start_time: 'desc' }
-      ],
+      orderBy: { created_at: 'desc' },
       take: parseInt(limit),
     });
 
