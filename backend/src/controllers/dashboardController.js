@@ -10,11 +10,9 @@ const getDashboardStats = async (req, res) => {
   try {
     const { shopId } = req.user;
 
-    // Get today's date range
+    // Get today's date string (YYYY-MM-DD)
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const todayStr = today.toISOString().split('T')[0];
 
     // Get total barbers
     const totalBarbers = await prisma.barber.count({
@@ -41,11 +39,11 @@ const getDashboardStats = async (req, res) => {
       },
     });
 
-    // Get today's appointments
+    // Get today's appointments (using appointment_date string field)
     const todayAppointments = await prisma.appointment.count({
       where: {
         shop_id: shopId,
-        start_time: { gte: today, lt: tomorrow },
+        appointment_date: todayStr,
         status: { in: ['booked', 'completed'] },
       },
     });
@@ -54,7 +52,7 @@ const getDashboardStats = async (req, res) => {
     const todayCompleted = await prisma.appointment.count({
       where: {
         shop_id: shopId,
-        start_time: { gte: today, lt: tomorrow },
+        appointment_date: todayStr,
         status: 'completed',
       },
     });
@@ -66,11 +64,14 @@ const getDashboardStats = async (req, res) => {
       },
     });
 
-    // Get recent appointments (last 5)
+    // Get recent appointments (last 5) - sort by appointment_date and start_time
     const recentAppointments = await prisma.appointment.findMany({
       where: { shop_id: shopId },
       include: { barber: true, service: true },
-      orderBy: { start_time: 'desc' },
+      orderBy: [
+        { appointment_date: 'desc' },
+        { start_time: 'desc' }
+      ],
       take: 5,
     });
 
@@ -110,7 +111,10 @@ const getAppointmentsByStatus = async (req, res) => {
     const appointments = await prisma.appointment.findMany({
       where: filter,
       include: { barber: true, service: true },
-      orderBy: { start_time: 'desc' },
+      orderBy: [
+        { appointment_date: 'desc' },
+        { start_time: 'desc' }
+      ],
       take: parseInt(limit),
     });
 
