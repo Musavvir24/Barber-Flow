@@ -27,9 +27,9 @@ const createService = async (req, res) => {
     const service = await PgService.create({
       shop_id: shopId,
       name,
-      duration_minutes,
-      price,
-      gap_time_minutes: gap_time_minutes || 0,
+      duration_minutes: parseInt(duration_minutes),
+      price: parseInt(price),
+      gap_time_minutes: gap_time_minutes ? parseInt(gap_time_minutes) : 0,
       active: true,
     });
 
@@ -55,9 +55,9 @@ const updateService = async (req, res) => {
 
     const updateData = {};
     if (name) updateData.name = name;
-    if (duration_minutes) updateData.duration_minutes = duration_minutes;
-    if (price) updateData.price = price;
-    if (gap_time_minutes !== undefined) updateData.gap_time_minutes = gap_time_minutes;
+    if (duration_minutes) updateData.duration_minutes = parseInt(duration_minutes);
+    if (price) updateData.price = parseInt(price);
+    if (gap_time_minutes !== undefined) updateData.gap_time_minutes = parseInt(gap_time_minutes);
     if (active !== undefined) updateData.active = active;
 
     const updated = await PgService.update(id, updateData);
