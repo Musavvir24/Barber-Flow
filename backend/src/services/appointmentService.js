@@ -2,20 +2,24 @@ const { prisma } = require('../utils/db');
 
 // Check if barber has conflicting appointments
 const checkConflict = async (barberId, startTime, endTime, excludeAppointmentId = null) => {
+  // Ensure dates are proper ISO format
+  const start = new Date(startTime).toISOString();
+  const end = new Date(endTime).toISOString();
+  
   const result = await prisma.appointment.findFirst({
     where: {
       barber_id: barberId,
       status: 'booked',
       OR: [
         {
-          start_time: { lt: endTime, gte: startTime },
+          start_time: { lt: end, gte: start },
         },
         {
-          end_time: { gt: startTime, lte: endTime },
+          end_time: { gt: start, lte: end },
         },
         {
-          start_time: { lte: startTime },
-          end_time: { gte: endTime },
+          start_time: { lte: start },
+          end_time: { gte: end },
         },
       ],
       ...(excludeAppointmentId && { NOT: { id: excludeAppointmentId } }),
@@ -27,10 +31,17 @@ const checkConflict = async (barberId, startTime, endTime, excludeAppointmentId 
 // Check if time slot falls within any barber break times (placeholder)
 const hasBreakConflict = async (barberId, date, slotTime, durationMinutes) => {
   // Check for barber unavailable days
+  const dateObj = new Date(date);
+  const startOfDay = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+  const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+  
   const unavailableDay = await prisma.barberUnavailableDay.findFirst({
     where: {
       barber_id: barberId,
-      unavailable_date: new Date(date),
+      unavailable_date: {
+        gte: startOfDay,
+        lt: endOfDay,
+      },
     },
   });
   return !!unavailableDay;
