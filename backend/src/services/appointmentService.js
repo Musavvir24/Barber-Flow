@@ -1,25 +1,22 @@
 const { prisma } = require('../utils/db');
 
-// Check if barber has conflicting appointments
-const checkConflict = async (barberId, startTime, endTime, excludeAppointmentId = null) => {
-  // Ensure dates are proper ISO format
-  const start = new Date(startTime).toISOString();
-  const end = new Date(endTime).toISOString();
-  
+// Check if barber has conflicting appointments (uses string format)
+const checkConflict = async (barberId, appointmentDate, startTime, endTime, excludeAppointmentId = null) => {
   const result = await prisma.appointment.findFirst({
     where: {
       barber_id: barberId,
+      appointment_date: appointmentDate,
       status: 'booked',
       OR: [
         {
-          start_time: { lt: end, gte: start },
+          start_time: { lt: endTime, gte: startTime },
         },
         {
-          end_time: { gt: start, lte: end },
+          end_time: { gt: startTime, lte: endTime },
         },
         {
-          start_time: { lte: start },
-          end_time: { gte: end },
+          start_time: { lte: startTime },
+          end_time: { gte: endTime },
         },
       ],
       ...(excludeAppointmentId && { NOT: { id: excludeAppointmentId } }),
@@ -50,39 +47,63 @@ const hasBreakConflict = async (barberId, date, slotTime, durationMinutes) => {
 // Get available time slots for a barber on a specific date
 // Generates slots based on service duration + gap time using shop's opening/closing times
 const getAvailableSlots = async (barberId, date, durationMinutes, gapTimeMinutes = 0, openingTime = '09:00:00', closingTime = '18:00:00') => {
-  // Parse opening and closing times
   const [openHour, openMin] = openingTime.split(':').map(Number);
   const [closeHour, closeMin] = closingTime.split(':').map(Number);
 
   const workStart = openHour * 60 + openMin; // in minutes
   const workEnd = closeHour * 60 + closeMin; // in minutes
-  const slotIntervalMinutes = durationMinutes + gapTimeMinutes; // Total time per slot including gap
+  const slotIntervalMinutes = durationMinutes + gapTimeMinutes;
 
   const slots = [];
   const dateStr = new Date(date).toISOString().split('T')[0];
 
-  // Generate all possible slots based on service duration + gap time
+  // Get all appointments for this barber on this date
+  const appointments = await prisma.appointment.findMany({
+    where: {
+      barber_id: barberId,
+      appointment_date: dateStr,
+      status: 'booked',
+    },
+  });
+
   let currentMinutes = workStart;
 
   while (currentMinutes + durationMinutes <= workEnd) {
     const hour = Math.floor(currentMinutes / 60);
     const minute = currentMinutes % 60;
-    const slotTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    const slotTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`;
+    
+    // Calculate end time for this slot
+    const endMinutes = currentMinutes + durationMinutes;
+    const endHour = Math.floor(endMinutes / 60);
+    const endMinute = endMinutes % 60;
+    const slotEndTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}:00`;
 
-    // Check if this slot has conflicts with appointments
-    const startTime = new Date(`${dateStr}T${slotTime}:00`);
-    const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
+    // Check if this slot conflicts with any existing appointment
+    let hasConflict = false;
+    for (const appt of appointments) {
+      const apptStart = appt.start_time;
+      const apptEnd = appt.end_time;
+      
+      // Check if slot overlaps with appointment
+      if (slotTime < apptEnd && slotEndTime > apptStart) {
+        hasConflict = true;
+        break;
+      }
+    }
+    
+    // Check if barber is unavailable on this date
+    const isUnavailable = await prisma.barberUnavailableDay.findFirst({
+      where: {
+        barber_id: barberId,
+        unavailable_date: new Date(dateStr),
+      },
+    });
 
-    const hasAppointmentConflict = await checkConflict(barberId, startTime, endTime);
-
-    // Check if this slot conflicts with break times
-    const hasBreak = await hasBreakConflict(barberId, date, slotTime, durationMinutes);
-
-    if (!hasAppointmentConflict && !hasBreak) {
-      slots.push(slotTime);
+    if (!hasConflict && !isUnavailable) {
+      slots.push(slotTime.split(':')[0] + ':' + slotTime.split(':')[1]); // Return HH:MM format
     }
 
-    // Move to next slot (duration + gap time)
     currentMinutes += slotIntervalMinutes;
   }
 

@@ -119,8 +119,9 @@ model Appointment {
   customer_phone    String
   customer_email    String?
   
-  start_time        DateTime
-  end_time          DateTime
+  appointment_date  String    // Format: YYYY-MM-DD
+  start_time        String    // Format: HH:MM:SS (e.g., "09:20:00")
+  end_time          String    // Format: HH:MM:SS (e.g., "09:35:00")
   
   status            String    @default("booked")
   notification_sent Boolean   @default(false)
@@ -131,7 +132,7 @@ model Appointment {
 
   @@index([shop_id])
   @@index([barber_id])
-  @@index([start_time])
+  @@index([appointment_date])
   @@index([notification_sent])
 }
 

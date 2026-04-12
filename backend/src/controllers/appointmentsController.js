@@ -72,10 +72,19 @@ const createAppointment = async (req, res) => {
     if (!shop) {
       return res.status(404).json({ error: 'Shop not found' });
     }
-    const hasConflict = await checkConflict(barber_id, start_time, end_time);
+    
+    // Extract date from start_time (format: "2026-04-13T09:20:00")
+    const startDate = new Date(start_time);
+    const appointmentDate = startDate.toISOString().split('T')[0]; // "2026-04-13"
+    const startTimeStr = startDate.toTimeString().split(' ')[0]; // "09:20:00"
+    const endTimeStr = new Date(end_time).toTimeString().split(' ')[0]; // "09:35:00"
+    
+    // Check conflicts using string format
+    const hasConflict = await checkConflict(barber_id, appointmentDate, startTimeStr, endTimeStr);
     if (hasConflict) {
       return res.status(409).json({ error: 'Time slot not available' });
     }
+    
     const appointment = await PgAppointment.create({
       shop_id: shop.id,
       barber_id,
@@ -83,8 +92,9 @@ const createAppointment = async (req, res) => {
       customer_name,
       customer_phone,
       customer_email: customer_email || null,
-      start_time: new Date(start_time),
-      end_time: new Date(end_time),
+      appointment_date: appointmentDate,
+      start_time: startTimeStr,
+      end_time: endTimeStr,
       status: 'booked',
     });
     res.status(201).json(appointment);
