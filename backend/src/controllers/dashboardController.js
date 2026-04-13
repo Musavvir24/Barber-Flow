@@ -21,71 +21,115 @@ const getDashboardStats = async (req, res) => {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Get total barbers
-    const totalBarbers = await prisma.barber.count({
-      where: {
-        shop_id: shopId,
-        active: true,
-      },
-    });
+    // Initialize with safe defaults
+    let totalBarbers = 0;
+    let availableBarbers = 0;
+    let totalServices = 0;
+    let todayAppointments = 0;
+    let todayCompleted = 0;
+    let totalAppointments = 0;
+    let recentAppointments = [];
+
+    // Get total barbers (safe, unlikely to have UTF-8 issues)
+    try {
+      totalBarbers = await prisma.barber.count({
+        where: {
+          shop_id: shopId,
+          active: true,
+        },
+      });
+    } catch (err) {
+      console.warn('Error counting barbers:', err.message);
+      totalBarbers = 0;
+    }
 
     // Get available barbers
-    const availableBarbers = await prisma.barber.count({
-      where: {
-        shop_id: shopId,
-        active: true,
-        available: true,
-      },
-    });
+    try {
+      availableBarbers = await prisma.barber.count({
+        where: {
+          shop_id: shopId,
+          active: true,
+          available: true,
+        },
+      });
+    } catch (err) {
+      console.warn('Error counting available barbers:', err.message);
+      availableBarbers = 0;
+    }
 
     // Get total services
-    const totalServices = await prisma.service.count({
-      where: {
-        shop_id: shopId,
-        active: true,
-      },
-    });
-
-    // Get today's appointments (using DateTime range)
-    const todayAppointments = await prisma.appointment.count({
-      where: {
-        shop_id: shopId,
-        start_time: {
-          gte: today,
-          lt: tomorrow,
+    try {
+      totalServices = await prisma.service.count({
+        where: {
+          shop_id: shopId,
+          active: true,
         },
-        status: { in: ['booked', 'completed'] },
-      },
-    });
+      });
+    } catch (err) {
+      console.warn('Error counting services:', err.message);
+      totalServices = 0;
+    }
+
+    // Get today's appointments - wrap with error handling
+    try {
+      todayAppointments = await prisma.appointment.count({
+        where: {
+          shop_id: shopId,
+          start_time: {
+            gte: today,
+            lt: tomorrow,
+          },
+          status: { in: ['booked', 'completed'] },
+        },
+      });
+    } catch (err) {
+      console.warn('Error counting today appointments:', err.message);
+      todayAppointments = 0;
+    }
 
     // Get today's completed appointments
-    const todayCompleted = await prisma.appointment.count({
-      where: {
-        shop_id: shopId,
-        start_time: {
-          gte: today,
-          lt: tomorrow,
+    try {
+      todayCompleted = await prisma.appointment.count({
+        where: {
+          shop_id: shopId,
+          start_time: {
+            gte: today,
+            lt: tomorrow,
+          },
+          status: 'completed',
         },
-        status: 'completed',
-      },
-    });
+      });
+    } catch (err) {
+      console.warn('Error counting today completed:', err.message);
+      todayCompleted = 0;
+    }
 
-    // Get total appointments (all time)
-    const totalAppointments = await prisma.appointment.count({
-      where: {
-        shop_id: shopId,
-      },
-    });
+    // Get total appointments - wrap with error handling
+    try {
+      totalAppointments = await prisma.appointment.count({
+        where: {
+          shop_id: shopId,
+        },
+      });
+    } catch (err) {
+      console.warn('Error counting total appointments:', err.message);
+      totalAppointments = 0;
+    }
 
-    // Get recent appointments (last 5)
-    const recentAppointments = await prisma.appointment.findMany({
-      where: { 
-        shop_id: shopId,
-      },
-      include: { barber: true, service: true },
-      orderBy: { created_at: 'desc' },
-      take: 5,
-    });
+    // Get recent appointments - wrap with error handling
+    try {
+      recentAppointments = await prisma.appointment.findMany({
+        where: { 
+          shop_id: shopId,
+        },
+        include: { barber: true, service: true },
+        orderBy: { created_at: 'desc' },
+        take: 5,
+      });
+    } catch (err) {
+      console.warn('Error fetching recent appointments:', err.message);
+      recentAppointments = [];
+    }
 
     res.json({
       totalBarbers,
@@ -120,12 +164,18 @@ const getAppointmentsByStatus = async (req, res) => {
       filter.status = status;
     }
 
-    const appointments = await prisma.appointment.findMany({
-      where: filter,
-      include: { barber: true, service: true },
-      orderBy: { created_at: 'desc' },
-      take: parseInt(limit),
-    });
+    let appointments = [];
+    try {
+      appointments = await prisma.appointment.findMany({
+        where: filter,
+        include: { barber: true, service: true },
+        orderBy: { created_at: 'desc' },
+        take: parseInt(limit),
+      });
+    } catch (err) {
+      console.warn('Error fetching appointments by status:', err.message);
+      appointments = [];
+    }
 
     const formattedAppointments = appointments.map((apt) => ({
       ...apt,
@@ -135,8 +185,8 @@ const getAppointmentsByStatus = async (req, res) => {
 
     res.json(formattedAppointments);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    console.error('getAppointmentsByStatus error:', error.message);
+    res.status(500).json({ error: error.message || 'Failed to fetch appointments' });
   }
 };
 
