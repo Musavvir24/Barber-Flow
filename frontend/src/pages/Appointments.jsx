@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { appointments } from '../utils/api.jsx';
 import { useApi } from '../utils/hooks.jsx';
+import { convertTo12Hour } from '../utils/timeFormat.js';
 import './Appointments.css';
 
 const Appointments = ({ shop }) => {
@@ -24,7 +25,7 @@ const Appointments = ({ shop }) => {
 
   const filteredAppointments = selectedDate
     ? appointmentsList?.filter(
-        (apt) => new Date(apt.start_time).toLocaleDateString() === selectedDate
+        (apt) => apt.appointment_date === selectedDate
       )
     : appointmentsList;
 
@@ -75,7 +76,9 @@ const Appointments = ({ shop }) => {
                 <tr key={appointment.id}>
                   <td>{appointment.customer_name}</td>
                   <td>{appointment.customer_phone}</td>
-                  <td>{new Date(appointment.start_time).toLocaleString()}</td>
+                  <td>
+                    {appointment.appointment_date} at {convertTo12Hour(appointment.start_time)}
+                  </td>
                   <td>
                     <select
                       value={appointment.status}

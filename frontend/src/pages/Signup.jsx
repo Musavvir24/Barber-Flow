@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { auth } from '../utils/api.jsx';
+import { convertTo12Hour } from '../utils/timeFormat.js';
 import './Auth.css';
 
 const COUNTRIES_DATA = {
@@ -446,6 +447,7 @@ const Signup = ({ onSignupSuccess }) => {
                 onChange={handleChange}
                 required
               />
+              <small>({convertTo12Hour(formData.openingTime + ':00')})</small>
             </div>
 
             {/* Closing Time */}
@@ -459,6 +461,7 @@ const Signup = ({ onSignupSuccess }) => {
                 onChange={handleChange}
                 required
               />
+              <small>({convertTo12Hour(formData.closingTime + ':00')})</small>
             </div>
 
             <button 

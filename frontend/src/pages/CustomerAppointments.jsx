@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { appointments } from '../utils/api.jsx';
+import { convertTo12Hour } from '../utils/timeFormat.js';
 
 const CustomerAppointments = () => {
   const { shopSlug } = useParams();
@@ -112,18 +113,10 @@ const CustomerAppointments = () => {
             <h4>Found {customerAppointments.length} appointment(s)</h4>
             <div style={{ marginTop: '1rem' }}>
               {customerAppointments.map((apt) => {
-                // Use the start_time_display field that backend now provides
-                let displayTime = apt.start_time_display;
+                // Use appointment_date and start_time strings from new schema
+                const displayDate = apt.appointment_date || 'Unknown';
+                const displayTime = apt.start_time ? convertTo12Hour(apt.start_time) : 'Unknown';
                 
-                if (!displayTime) {
-                  // Fallback: Extract and format time manually
-                  const startDate = new Date(apt.start_time);
-                  const hours = String(startDate.getHours()).padStart(2, '0');
-                  const minutes = String(startDate.getMinutes()).padStart(2, '0');
-                  displayTime = formatTimeDisplay(`${hours}:${minutes}`);
-                }
-                
-                const startDate = new Date(apt.start_time);
                 return (
                   <div
                     key={apt.id}
@@ -146,7 +139,7 @@ const CustomerAppointments = () => {
                     </div>
 
                     <p style={{ margin: '0.3rem 0', color: '#666' }}>
-                      <strong>Date:</strong> {startDate.toLocaleDateString()}
+                      <strong>Date:</strong> {displayDate}
                     </p>
                     <p style={{ margin: '0.3rem 0', color: '#666' }}>
                       <strong>Time:</strong> {displayTime}

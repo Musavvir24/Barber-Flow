@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { dashboard, shops } from '../utils/api.jsx';
+import { convertTo12Hour } from '../utils/timeFormat.js';
 import './Dashboard.css';
 // Upgrade modal is managed by `ProtectedRoute` to avoid duplicate modals
 
@@ -241,7 +242,7 @@ const Dashboard = ({ shop }) => {
                       <td>{apt.customer_name}</td>
                       <td>{apt.barber_name}</td>
                       <td>{apt.service_name}</td>
-                      <td>{new Date(apt.start_time).toLocaleString()}</td>
+                      <td>{apt.appointment_date} at {convertTo12Hour(apt.start_time)}</td>
                       <td>
                         <span style={{
                           padding: '0.25rem 0.75rem',

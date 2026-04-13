@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { barbers, services } from '../utils/api.jsx';
+import { convertTo12Hour } from '../utils/timeFormat.js';
 import './Barbers.css';
 import { useApi } from '../utils/hooks.jsx';
 
@@ -388,6 +389,7 @@ const Barbers = () => {
                             onChange={(e) => setBreakForm({ ...breakForm, break_start_time: e.target.value })}
                             style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
                           />
+                          <small style={{ fontSize: '0.75rem', color: '#666' }}>({convertTo12Hour(breakForm.break_start_time + ':00')})</small>
                         </div>
                         <div>
                           <label style={{ fontSize: '0.85rem', fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Break End</label>
@@ -397,6 +399,7 @@ const Barbers = () => {
                             onChange={(e) => setBreakForm({ ...breakForm, break_end_time: e.target.value })}
                             style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
                           />
+                          <small style={{ fontSize: '0.75rem', color: '#666' }}>({convertTo12Hour(breakForm.break_end_time + ':00')})</small>
                         </div>
                       </div>
                       <button
@@ -426,7 +429,7 @@ const Barbers = () => {
                               <div>
                                 <strong style={{ display: 'block', marginBottom: '0.25rem' }}>{breakTime.day_of_week}</strong>
                                 <div style={{ fontSize: '0.85rem', color: '#666' }}>
-                                  🕐 {breakTime.break_start_time} - {breakTime.break_end_time}
+                                  🕐 {convertTo12Hour(breakTime.break_start_time + ':00')} - {convertTo12Hour(breakTime.break_end_time + ':00')}
                                 </div>
                               </div>
                               <button

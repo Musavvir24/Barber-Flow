@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { shops } from '../utils/api.jsx';
+import { convertTo12Hour } from '../utils/timeFormat.js';
 import UpgradePlanModal from '../components/UpgradePlanModal.jsx';
 import './Settings.css';
 
@@ -176,6 +177,7 @@ const Settings = ({ shop, onLogout }) => {
               onChange={handleChange}
               required
             />
+            <small>({convertTo12Hour(formData.opening_time + ':00')})</small>
           </div>
 
           {/* Closing Time */}
@@ -189,6 +191,7 @@ const Settings = ({ shop, onLogout }) => {
               onChange={handleChange}
               required
             />
+            <small>({convertTo12Hour(formData.closing_time + ':00')})</small>
           </div>
 
           {/* Shop Email Info */}
