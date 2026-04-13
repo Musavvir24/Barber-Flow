@@ -8,7 +8,12 @@ const { prisma } = require('../utils/db');
  */
 const getDashboardStats = async (req, res) => {
   try {
-    const { shopId } = req.user;
+    const shopId = req.user?.shopId;
+    
+    if (!shopId) {
+      console.error('DEBUG: shopId is missing. req.user:', req.user);
+      return res.status(400).json({ error: 'Shop ID not found in token' });
+    }
 
     // Get today's date string (YYYY-MM-DD)
     const today = new Date();
@@ -91,8 +96,8 @@ const getDashboardStats = async (req, res) => {
       })),
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    console.error('Dashboard stats error:', error.message, error.stack);
+    res.status(500).json({ error: error.message || 'Failed to fetch dashboard stats' });
   }
 };
 
