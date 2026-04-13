@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { shops } from '../utils/api.jsx';
 import { convertTo12Hour } from '../utils/timeFormat.js';
+import { isElectron } from '../utils/isElectron.js';
 import UpgradePlanModal from '../components/UpgradePlanModal.jsx';
 import './Settings.css';
 
@@ -32,7 +33,7 @@ const Settings = ({ shop, onLogout }) => {
 
   // Countdown timer effect
   useEffect(() => {
-    if (!trialInfo || trialInfo.is_premium) return;
+    if (isElectron() || !trialInfo || trialInfo.is_premium) return;
 
     const updateCountdown = () => {
       const now = new Date();
@@ -58,6 +59,10 @@ const Settings = ({ shop, onLogout }) => {
   }, [trialInfo]);
 
   const checkTrialStatus = async () => {
+    // Skip trial checks in Electron (completely free)
+    if (isElectron()) {
+      return;
+    }
     try {
       const response = await shops.checkTrialStatus(shop.id);
       setTrialInfo(response.data);
@@ -109,43 +114,49 @@ const Settings = ({ shop, onLogout }) => {
 
   return (
     <>
-      <UpgradePlanModal
-        shop={shop}
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        onUpgrade={() => window.location.reload()}
-      />
+      {!isElectron() && (
+        <UpgradePlanModal
+          shop={shop}
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          onUpgrade={() => window.location.reload()}
+        />
+      )}
 
       <div className="container" style={{ maxWidth: '600px', marginTop: '2rem', marginBottom: '2rem' }}>
         <div className="card">
           <div className="card-header">
             Shop Settings
-            {trialInfo && !trialInfo.is_premium && (
-              <span style={{
-                float: 'right',
-                fontSize: '0.85rem',
-                backgroundColor: '#fff3cd',
-                color: '#856404',
-                padding: '0.6rem 0.8rem',
-                borderRadius: '4px',
-                fontWeight: 'bold',
-                fontFamily: 'monospace',
-              }}>
-                ⏱️ Trial: {timeRemaining.days}d {timeRemaining.hours}h {timeRemaining.minutes}m {timeRemaining.seconds}s
-              </span>
-            )}
-            {trialInfo && trialInfo.is_premium && (
-              <span style={{
-                float: 'right',
-                fontSize: '0.85rem',
-                backgroundColor: '#d4edda',
-                color: '#155724',
-                padding: '0.4rem 0.8rem',
-                borderRadius: '4px',
-              }}>
-                ✓ Premium Active {trialInfo.premium_expires_at && 
-                  `- Expires: ${new Date(trialInfo.premium_expires_at).toLocaleDateString()}`}
-              </span>
+            {!isElectron() && (
+              <>
+                {trialInfo && !trialInfo.is_premium && (
+                  <span style={{
+                    float: 'right',
+                    fontSize: '0.85rem',
+                    backgroundColor: '#fff3cd',
+                    color: '#856404',
+                    padding: '0.6rem 0.8rem',
+                    borderRadius: '4px',
+                    fontWeight: 'bold',
+                    fontFamily: 'monospace',
+                  }}>
+                    ⏱️ Trial: {timeRemaining.days}d {timeRemaining.hours}h {timeRemaining.minutes}m {timeRemaining.seconds}s
+                  </span>
+                )}
+                {trialInfo && trialInfo.is_premium && (
+                  <span style={{
+                    float: 'right',
+                    fontSize: '0.85rem',
+                    backgroundColor: '#d4edda',
+                    color: '#155724',
+                    padding: '0.4rem 0.8rem',
+                    borderRadius: '4px',
+                  }}>
+                    ✓ Premium Active {trialInfo.premium_expires_at && 
+                      `- Expires: ${new Date(trialInfo.premium_expires_at).toLocaleDateString()}`}
+                  </span>
+                )}
+              </>
             )}
           </div>
 
@@ -224,7 +235,7 @@ const Settings = ({ shop, onLogout }) => {
           </button>
 
           {/* Upgrade Plan Button */}
-          {trialInfo && !trialInfo.is_premium && (
+          {!isElectron() && trialInfo && !trialInfo.is_premium && (
             <button
               type="button"
               onClick={() => setShowUpgradeModal(true)}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { shops } from '../utils/api.jsx';
+import { isElectron } from '../utils/isElectron.js';
 import UpgradeModal from './UpgradeModal.jsx';
 
 const ProtectedRoute = ({ user, shop, children, allowedWhenTrialExpired = false }) => {
@@ -14,6 +15,12 @@ const ProtectedRoute = ({ user, shop, children, allowedWhenTrialExpired = false 
 
   const checkTrialStatus = async () => {
     if (!shop) {
+      setLoading(false);
+      return;
+    }
+
+    // Skip trial checks if running in Electron (completely free)
+    if (isElectron()) {
       setLoading(false);
       return;
     }
@@ -46,33 +53,36 @@ const ProtectedRoute = ({ user, shop, children, allowedWhenTrialExpired = false 
     return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
   }
 
-  // Show upgrade modal if trial expired or premium expired and not allowed
-  if ((trialInfo?.is_trial_expired || trialInfo?.is_premium_expired) && !allowedWhenTrialExpired) {
-    return (
-      <>
-        {showUpgradeModal && (
-          <UpgradeModal
-            shop={shop}
-            isOpen={true}
-            isRenewal={trialInfo?.is_premium_expired}
-            onClose={() => setShowUpgradeModal(false)}
-            onUpgrade={() => window.location.reload()}
-          />
-        )}
-        <div 
-          style={{ 
-            filter: 'blur(8px)', 
-            pointerEvents: 'auto',
-            padding: '2rem',
-            userSelect: 'none',
-            cursor: 'pointer',
-          }}
-          onClick={() => setShowUpgradeModal(true)}
-        >
-          {children}
-        </div>
-      </>
-    );
+  // Skip upgrade modal in Electron (completely free)
+  if (!isElectron()) {
+    // Show upgrade modal if trial expired or premium expired and not allowed
+    if ((trialInfo?.is_trial_expired || trialInfo?.is_premium_expired) && !allowedWhenTrialExpired) {
+      return (
+        <>
+          {showUpgradeModal && (
+            <UpgradeModal
+              shop={shop}
+              isOpen={true}
+              isRenewal={trialInfo?.is_premium_expired}
+              onClose={() => setShowUpgradeModal(false)}
+              onUpgrade={() => window.location.reload()}
+            />
+          )}
+          <div 
+            style={{ 
+              filter: 'blur(8px)', 
+              pointerEvents: 'auto',
+              padding: '2rem',
+              userSelect: 'none',
+              cursor: 'pointer',
+            }}
+            onClick={() => setShowUpgradeModal(true)}
+          >
+            {children}
+          </div>
+        </>
+      );
+    }
   }
 
   return children;

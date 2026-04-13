@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { dashboard, shops } from '../utils/api.jsx';
 import { convertTo12Hour } from '../utils/timeFormat.js';
+import { isElectron } from '../utils/isElectron.js';
 import './Dashboard.css';
 // Upgrade modal is managed by `ProtectedRoute` to avoid duplicate modals
 
@@ -20,7 +21,7 @@ const Dashboard = ({ shop }) => {
 
   // Countdown timer effect
   useEffect(() => {
-    if (!trialInfo || trialInfo.is_premium) return;
+    if (isElectron() || !trialInfo || trialInfo.is_premium) return;
 
     const updateCountdown = () => {
       const now = new Date();
@@ -46,6 +47,10 @@ const Dashboard = ({ shop }) => {
   }, [trialInfo]);
 
   const checkTrialStatus = async () => {
+    // Skip trial checks in Electron (completely free)
+    if (isElectron()) {
+      return;
+    }
     try {
       const response = await shops.checkTrialStatus(shop.id);
       setTrialInfo(response.data);
@@ -66,7 +71,7 @@ const Dashboard = ({ shop }) => {
         window.location.href = '/login';
       }
     }
-  };
+  };;
 
   const fetchStats = async () => {
     try {
@@ -105,31 +110,35 @@ const Dashboard = ({ shop }) => {
         <div className="card">
           <div className="card-header">
             Welcome Back!
-            {trialInfo && !trialInfo.is_premium && (
-              <span style={{
-                float: 'right',
-                fontSize: '0.85rem',
-                backgroundColor: '#fff3cd',
-                color: '#856404',
-                padding: '0.6rem 0.8rem',
-                borderRadius: '4px',
-                fontWeight: 'bold',
-                fontFamily: 'monospace',
-              }}>
-                ⏱️ Trial: {timeRemaining.days}d {timeRemaining.hours}h {timeRemaining.minutes}m {timeRemaining.seconds}s
-              </span>
-            )}
-            {trialInfo && trialInfo.is_premium && (
-              <span style={{
-                float: 'right',
-                fontSize: '0.85rem',
-                backgroundColor: '#d4edda',
-                color: '#155724',
-                padding: '0.4rem 0.8rem',
-                borderRadius: '4px',
-              }}>
-                ✓ Premium Active
-              </span>
+            {!isElectron() && (
+              <>
+                {trialInfo && !trialInfo.is_premium && (
+                  <span style={{
+                    float: 'right',
+                    fontSize: '0.85rem',
+                    backgroundColor: '#fff3cd',
+                    color: '#856404',
+                    padding: '0.6rem 0.8rem',
+                    borderRadius: '4px',
+                    fontWeight: 'bold',
+                    fontFamily: 'monospace',
+                  }}>
+                    ⏱️ Trial: {timeRemaining.days}d {timeRemaining.hours}h {timeRemaining.minutes}m {timeRemaining.seconds}s
+                  </span>
+                )}
+                {trialInfo && trialInfo.is_premium && (
+                  <span style={{
+                    float: 'right',
+                    fontSize: '0.85rem',
+                    backgroundColor: '#d4edda',
+                    color: '#155724',
+                    padding: '0.4rem 0.8rem',
+                    borderRadius: '4px',
+                  }}>
+                    ✓ Premium Active
+                  </span>
+                )}
+              </>
             )}
           </div>
           <p style={{ marginBottom: '1rem', fontSize: '1.1rem', color: '#7f8c8d', clear: 'both' }}>
