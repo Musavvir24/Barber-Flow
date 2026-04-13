@@ -15,9 +15,11 @@ const getDashboardStats = async (req, res) => {
       return res.status(400).json({ error: 'Shop ID not found in token' });
     }
 
-    // Get today's date string (YYYY-MM-DD)
+    // Get today's date range for filtering
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
     // Get total barbers
     const totalBarbers = await prisma.barber.count({
@@ -44,11 +46,14 @@ const getDashboardStats = async (req, res) => {
       },
     });
 
-    // Get today's appointments (using appointment_date string field)
+    // Get today's appointments (using DateTime range)
     const todayAppointments = await prisma.appointment.count({
       where: {
         shop_id: shopId,
-        appointment_date: todayStr,
+        start_time: {
+          gte: today,
+          lt: tomorrow,
+        },
         status: { in: ['booked', 'completed'] },
       },
     });
@@ -57,7 +62,10 @@ const getDashboardStats = async (req, res) => {
     const todayCompleted = await prisma.appointment.count({
       where: {
         shop_id: shopId,
-        appointment_date: todayStr,
+        start_time: {
+          gte: today,
+          lt: tomorrow,
+        },
         status: 'completed',
       },
     });
@@ -69,13 +77,10 @@ const getDashboardStats = async (req, res) => {
       },
     });
 
-    // Get recent appointments (last 5) - order by created_at instead of appointment_date to avoid UTF-8 issues
+    // Get recent appointments (last 5)
     const recentAppointments = await prisma.appointment.findMany({
       where: { 
         shop_id: shopId,
-        appointment_date: {
-          not: null // Filter out null dates to avoid UTF-8 encoding errors
-        }
       },
       include: { barber: true, service: true },
       orderBy: { created_at: 'desc' },
@@ -116,12 +121,7 @@ const getAppointmentsByStatus = async (req, res) => {
     }
 
     const appointments = await prisma.appointment.findMany({
-      where: {
-        ...filter,
-        appointment_date: {
-          not: null // Filter out null dates to avoid UTF-8 encoding errors
-        }
-      },
+      where: filter,
       include: { barber: true, service: true },
       orderBy: { created_at: 'desc' },
       take: parseInt(limit),

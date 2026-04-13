@@ -251,7 +251,7 @@ const Dashboard = ({ shop }) => {
                       <td>{apt.customer_name}</td>
                       <td>{apt.barber_name}</td>
                       <td>{apt.service_name}</td>
-                      <td>{apt.appointment_date} at {convertTo12Hour(apt.start_time)}</td>
+                      <td>{new Date(apt.start_time).toLocaleString()}</td>
                       <td>
                         <span style={{
                           padding: '0.25rem 0.75rem',

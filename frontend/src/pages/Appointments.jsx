@@ -25,7 +25,7 @@ const Appointments = ({ shop }) => {
 
   const filteredAppointments = selectedDate
     ? appointmentsList?.filter(
-        (apt) => apt.appointment_date === selectedDate
+        (apt) => new Date(apt.start_time).toLocaleDateString() === selectedDate
       )
     : appointmentsList;
 
@@ -76,9 +76,7 @@ const Appointments = ({ shop }) => {
                 <tr key={appointment.id}>
                   <td>{appointment.customer_name}</td>
                   <td>{appointment.customer_phone}</td>
-                  <td>
-                    {appointment.appointment_date} at {convertTo12Hour(appointment.start_time)}
-                  </td>
+                  <td>{new Date(appointment.start_time).toLocaleString()}</td>
                   <td>
                     <select
                       value={appointment.status}

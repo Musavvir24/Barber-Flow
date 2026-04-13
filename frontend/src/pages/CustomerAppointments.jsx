@@ -113,9 +113,8 @@ const CustomerAppointments = () => {
             <h4>Found {customerAppointments.length} appointment(s)</h4>
             <div style={{ marginTop: '1rem' }}>
               {customerAppointments.map((apt) => {
-                // Use appointment_date and start_time strings from new schema
-                const displayDate = apt.appointment_date || 'Unknown';
-                const displayTime = apt.start_time ? convertTo12Hour(apt.start_time) : 'Unknown';
+                // Parse start_time DateTime
+                const startDate = new Date(apt.start_time);
                 
                 return (
                   <div
@@ -139,10 +138,10 @@ const CustomerAppointments = () => {
                     </div>
 
                     <p style={{ margin: '0.3rem 0', color: '#666' }}>
-                      <strong>Date:</strong> {displayDate}
+                      <strong>Date:</strong> {startDate.toLocaleDateString()}
                     </p>
                     <p style={{ margin: '0.3rem 0', color: '#666' }}>
-                      <strong>Time:</strong> {displayTime}
+                      <strong>Time:</strong> {new Date(apt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                     <p style={{ margin: '0.3rem 0', color: '#666' }}>
                       <strong>Duration:</strong> {apt.duration_minutes || '30'} minutes
